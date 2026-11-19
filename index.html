@@ -14,6 +14,12 @@
   }
   #panel h1 { font-size: 17px; margin: 0 0 2px; color: #f3c58f; }
   #panel.hidden { display: none; }
+  #orig { display: flex; align-items: center; gap: 8px; color: #f3c58f; text-decoration: none; margin-bottom: 8px; font-size: 12px; }
+  #orig img { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid #5b4b3d; }
+  #orig:hover span { text-decoration: underline; }
+  .save { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 8px 0; }
+  .save button { padding: 6px 4px; }
+  #saveMsg { color: #9c9; font-size: 12px; min-height: 16px; }
   #hidePanel { position: absolute; top: 10px; right: 10px; padding: 3px 8px; }
   #showPanel { position: fixed; top: 12px; left: 12px; display: none; padding: 8px 12px; font-size: 13px;
     background: rgba(28, 24, 20, .88); box-shadow: 0 4px 14px rgba(0,0,0,.2); }
@@ -60,6 +66,8 @@
   <button id="hidePanel" title="Hide panel (H)">✕</button>
   <h1>Wooden Suit Hanger</h1>
   <div class="sub">Sizes in cm — drag the sliders, the model updates live.</div>
+  <a id="orig" href="pic/original.jpeg" target="_blank" title="Open the original photo">
+    <img src="pic/original.jpeg" alt="Original hanger photo"><span>Original photo ↗</span></a>
   <div id="sliders"></div>
 
   <div class="toggles">
@@ -79,6 +87,13 @@
     <button id="reset">Reset sizes</button>
   </div>
 
+  <div class="save">
+    <button id="copyLink" title="Copy a link that opens with these exact settings">🔗 Copy link</button>
+    <button id="saveFile" title="Download these settings as a file">💾 Save file</button>
+    <button id="loadFile" title="Load a settings file">📂 Load file</button>
+  </div>
+  <input type="file" id="fileIn" accept=".json,application/json" hidden>
+  <div id="saveMsg">Settings are remembered in this browser automatically.</div>
   <div id="info"></div>
 
   <div class="sl"><label>Template paper size
@@ -436,10 +451,65 @@ for (const [key, name, min, max, step] of SPEC) {
 }
 function syncSliders() { for (const [k] of SPEC) { document.getElementById('s_' + k).value = P[k]; document.getElementById('v_' + k).textContent = fmt(P[k]); } }
 for (const [k] of SPEC) document.getElementById('s_' + k).addEventListener('input', e => {
-  P[k] = parseFloat(e.target.value); document.getElementById('v_' + k).textContent = fmt(P[k]); rebuild();
+  P[k] = parseFloat(e.target.value); document.getElementById('v_' + k).textContent = fmt(P[k]); rebuild(); saveSettings();
 });
 ['tHook', 'tFlock', 'tRod', 'tDims', 'tSpin', 'tWire'].forEach(id => document.getElementById(id).addEventListener('change', applyToggles));
-document.getElementById('reset').onclick = () => { Object.assign(P, DEFAULTS); syncSliders(); rebuild(); };
+document.getElementById('reset').onclick = () => { Object.assign(P, DEFAULTS); syncSliders(); rebuild(); saveSettings(); };
+
+// ---------- saving settings: browser memory, share link (#hash), and JSON file ----------
+const STORE_KEY = 'hanger-settings-v1';
+function applySettings(obj) {
+  if (!obj || typeof obj !== 'object') return false;
+  let n = 0;
+  for (const [k, , min, max] of SPEC) {
+    const v = parseFloat(obj[k]);
+    if (Number.isFinite(v)) { P[k] = Math.min(max, Math.max(min, v)); n++; }
+  }
+  if (obj.paper && PAPER[obj.paper]) document.getElementById('paper').value = obj.paper;
+  return n > 0;
+}
+function currentSettings() {
+  const o = {}; for (const [k] of SPEC) o[k] = P[k];
+  o.paper = document.getElementById('paper').value;
+  return o;
+}
+function settingsHash() { return '#' + new URLSearchParams(Object.entries(currentSettings())).toString(); }
+function saveSettings() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(currentSettings())); } catch (e) { /* storage blocked */ }
+  history.replaceState(null, '', settingsHash());
+}
+function loadInitialSettings() {
+  if (location.hash.length > 1 && applySettings(Object.fromEntries(new URLSearchParams(location.hash.slice(1))))) return;
+  try { applySettings(JSON.parse(localStorage.getItem(STORE_KEY))); } catch (e) { /* nothing saved */ }
+}
+function flash(msg) {
+  const el = document.getElementById('saveMsg'); el.textContent = msg;
+  clearTimeout(flash.t); flash.t = setTimeout(() => el.textContent = 'Settings are remembered in this browser automatically.', 3000);
+}
+document.getElementById('paper').addEventListener('change', saveSettings);
+document.getElementById('copyLink').onclick = async () => {
+  const url = location.href.split('#')[0] + settingsHash();
+  try { await navigator.clipboard.writeText(url); flash('Link copied – paste it anywhere to reopen these settings.'); }
+  catch (e) { prompt('Copy this link:', url); }
+};
+document.getElementById('saveFile').onclick = () => {
+  const name = (prompt('Name for this settings file:', `hanger-${fmt(P.W)}cm`) || '').trim();
+  if (!name) return;
+  download(name.replace(/[^\w\-. ]+/g, '_') + '.json', JSON.stringify({ app: 'wooden-hanger', ...currentSettings() }, null, 2), 'application/json');
+  flash('Saved.');
+};
+document.getElementById('loadFile').onclick = () => document.getElementById('fileIn').click();
+document.getElementById('fileIn').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  try {
+    if (!applySettings(JSON.parse(await f.text()))) throw new Error('no settings');
+    syncSliders(); rebuild(); saveSettings(); flash(`Loaded ${f.name}`);
+  } catch (err) { flash('That file is not a hanger settings file.'); }
+};
+addEventListener('hashchange', () => {
+  if (applySettings(Object.fromEntries(new URLSearchParams(location.hash.slice(1))))) { syncSliders(); rebuild(); }
+});
 
 const TARGET = new THREE.Vector3(0, -3, 0);
 const VIEWS = { persp: [42, 24, 70], front: [0, -3, 95], top: [0, 90, 0.01], side: [80, -3, 0] };
@@ -620,6 +690,7 @@ addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight); labelRenderer.setSize(innerWidth, innerHeight);
 });
 
+loadInitialSettings();
 syncSliders();
 rebuild();
 setView('persp');
