@@ -80,8 +80,6 @@
   <button id="hidePanel" title="Hide panel (H)">✕</button>
   <h1>Wooden Suit Hanger</h1>
   <div class="sub">Sizes in cm — drag the sliders, the model updates live.</div>
-  <a id="orig" href="pic/original.jpeg" target="_blank" title="Open the original photo">
-    <img src="pic/original.jpeg" alt="Original hanger photo"><span>Original photo ↗</span></a>
   <div id="sliders"></div>
 
   <div class="toggles">
@@ -107,7 +105,7 @@
     <button id="loadFile" title="Load a settings file">📂 Load file</button>
   </div>
   <input type="file" id="fileIn" accept=".json,application/json" hidden>
-  <div id="saveMsg">Settings are remembered in this browser automatically.</div>
+  <div id="saveMsg">The page address always holds these settings – share it as is.</div>
   <div id="info"></div>
 
   <div class="sl"><label>Template paper size
@@ -130,6 +128,8 @@
       <li><b>Hook:</b> a flat chrome hanger hook (about 11 × 3.5 mm strip), epoxied into the slot.</li>
     </ol>
   </details>
+  <a id="orig" style="margin-top:12px" href="pic/original.jpeg" target="_blank" title="Open the original photo">
+    <img src="pic/original.jpeg" alt="Original hanger photo"><span>Original photo ↗</span></a>
 </div>
 <button id="showPanel" title="Show panel (H)">☰ Settings</button>
 <div id="hint">Drag: rotate · Scroll: zoom · Right-drag: pan · H: hide panel</div>
@@ -467,11 +467,12 @@ function syncSliders() { for (const [k] of SPEC) { document.getElementById('s_' 
 for (const [k] of SPEC) document.getElementById('s_' + k).addEventListener('input', e => {
   P[k] = parseFloat(e.target.value); document.getElementById('v_' + k).textContent = fmt(P[k]); rebuild(); saveSettings();
 });
-['tHook', 'tFlock', 'tRod', 'tDims', 'tSpin', 'tWire'].forEach(id => document.getElementById(id).addEventListener('change', applyToggles));
+['tHook', 'tFlock', 'tRod', 'tDims', 'tSpin', 'tWire'].forEach(id => document.getElementById(id).addEventListener('change', () => { applyToggles(); saveSettings(); }));
 document.getElementById('reset').onclick = () => { Object.assign(P, DEFAULTS); syncSliders(); rebuild(); saveSettings(); };
 
 // ---------- saving settings: browser memory, share link (#hash), and JSON file ----------
 const STORE_KEY = 'hanger-settings-v1';
+const TOGGLES = [['hook', 'tHook'], ['flocked', 'tFlock'], ['rod', 'tRod'], ['dims', 'tDims'], ['spin', 'tSpin'], ['wire', 'tWire']];
 function applySettings(obj) {
   if (!obj || typeof obj !== 'object') return false;
   let n = 0;
@@ -480,29 +481,33 @@ function applySettings(obj) {
     if (Number.isFinite(v)) { P[k] = Math.min(max, Math.max(min, v)); n++; }
   }
   if (obj.paper && PAPER[obj.paper]) document.getElementById('paper').value = obj.paper;
+  for (const [key, id] of TOGGLES) if (key in obj) { document.getElementById(id).checked = String(obj[key]) === '1' || obj[key] === true; n++; }
   return n > 0;
 }
 function currentSettings() {
   const o = {}; for (const [k] of SPEC) o[k] = P[k];
   o.paper = document.getElementById('paper').value;
+  for (const [key, id] of TOGGLES) o[key] = document.getElementById(id).checked ? 1 : 0;
   return o;
 }
-function settingsHash() { return '#' + new URLSearchParams(Object.entries(currentSettings())).toString(); }
+// The page address always carries the full state (?W=45&angle=21&...), so the URL itself is a share link.
+function settingsUrl() { return location.origin + location.pathname + '?' + new URLSearchParams(Object.entries(currentSettings())).toString(); }
 function saveSettings() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(currentSettings())); } catch (e) { /* storage blocked */ }
-  history.replaceState(null, '', settingsHash());
+  try { history.replaceState(null, '', settingsUrl()); } catch (e) { /* e.g. file:// in some browsers */ }
 }
 function loadInitialSettings() {
+  if (location.search.length > 1 && applySettings(Object.fromEntries(new URLSearchParams(location.search)))) return;
   if (location.hash.length > 1 && applySettings(Object.fromEntries(new URLSearchParams(location.hash.slice(1))))) return;
   try { applySettings(JSON.parse(localStorage.getItem(STORE_KEY))); } catch (e) { /* nothing saved */ }
 }
 function flash(msg) {
   const el = document.getElementById('saveMsg'); el.textContent = msg;
-  clearTimeout(flash.t); flash.t = setTimeout(() => el.textContent = 'Settings are remembered in this browser automatically.', 3000);
+  clearTimeout(flash.t); flash.t = setTimeout(() => el.textContent = 'The page address always holds these settings – share it as is.', 3000);
 }
 document.getElementById('paper').addEventListener('change', saveSettings);
 document.getElementById('copyLink').onclick = async () => {
-  const url = location.href.split('#')[0] + settingsHash();
+  const url = settingsUrl();
   try { await navigator.clipboard.writeText(url); flash('Link copied – paste it anywhere to reopen these settings.'); }
   catch (e) { prompt('Copy this link:', url); }
 };
@@ -712,6 +717,7 @@ addEventListener('resize', () => {
 
 loadInitialSettings();
 syncSliders();
+saveSettings();
 rebuild();
 if (innerWidth <= 700) togglePanel(false);
 if (matchMedia('(pointer: coarse)').matches)
