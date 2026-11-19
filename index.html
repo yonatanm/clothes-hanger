@@ -47,6 +47,20 @@
     position: fixed; bottom: 14px; right: 16px; color: #5a4c40; font-size: 12px;
     background: rgba(255,255,255,.7); padding: 6px 10px; border-radius: 6px;
   }
+  canvas { touch-action: none; }
+  body { overscroll-behavior: none; }
+  @media (max-width: 700px) {
+    #panel { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 52vh; border-radius: 14px 14px 0 0;
+      padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); font-size: 14px; }
+    #hidePanel { padding: 6px 12px; font-size: 14px; }
+    #showPanel { top: auto; bottom: calc(14px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); padding: 10px 18px; font-size: 15px; }
+    .sl { margin: 12px 0; }
+    .sl input { height: 28px; }
+    .toggles label { padding: 4px 0; }
+    button { padding: 9px 12px; font-size: 13px; }
+    #hint { top: 10px; bottom: auto; right: 10px; left: 10px; text-align: center; font-size: 11px; }
+    .dim { font-size: 9px; padding: 0 4px; }
+  }
   .dim {
     font: 600 11px system-ui, sans-serif; color: #222; background: rgba(255,255,255,.88);
     padding: 1px 6px; border-radius: 4px; border: 1px solid #c9b8a6; white-space: nowrap;
@@ -513,7 +527,11 @@ addEventListener('hashchange', () => {
 
 const TARGET = new THREE.Vector3(0, -3, 0);
 const VIEWS = { persp: [42, 24, 70], front: [0, -3, 95], top: [0, 90, 0.01], side: [80, -3, 0] };
-function setView(v) { camera.position.set(...VIEWS[v]); controls.target.copy(TARGET); controls.update(); }
+function setView(v) {
+  const fit = Math.max(1, 1.25 / (innerWidth / innerHeight));   // portrait screens need more distance
+  camera.position.set(...VIEWS[v]).sub(TARGET).multiplyScalar(fit).add(TARGET);
+  controls.target.copy(TARGET); controls.update();
+}
 document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => setView(b.dataset.view));
 
 function download(name, data, type) {
@@ -670,8 +688,10 @@ document.getElementById('stl').onclick = () => {
 function fitView() {
   camera.aspect = innerWidth / innerHeight;
   const panelShown = !document.getElementById('panel').classList.contains('hidden');
-  const off = panelShown && innerWidth > 700 ? 150 : 0; // half the panel width
-  camera.setViewOffset(innerWidth, innerHeight, -off, 0, innerWidth, innerHeight);
+  const mobile = innerWidth <= 700;
+  const offX = panelShown && !mobile ? 150 : 0;                                      // half the side panel
+  const offY = panelShown && mobile ? document.getElementById('panel').offsetHeight / 2 : 0; // half the bottom sheet
+  camera.setViewOffset(innerWidth, innerHeight, -offX, offY, innerWidth, innerHeight);
   camera.updateProjectionMatrix();
 }
 fitView();
@@ -693,6 +713,9 @@ addEventListener('resize', () => {
 loadInitialSettings();
 syncSliders();
 rebuild();
+if (innerWidth <= 700) togglePanel(false);
+if (matchMedia('(pointer: coarse)').matches)
+  document.getElementById('hint').textContent = '1 finger: rotate · pinch: zoom · 2 fingers: pan';
 setView('persp');
 renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); labelRenderer.render(scene, camera); });
 </script>
