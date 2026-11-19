@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Wooden Suit Hanger – 3D Model</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #ece8e2; }
+  #app { position: fixed; inset: 0; }
+  #panel {
+    position: fixed; top: 12px; left: 12px; bottom: 12px; width: 290px; overflow-y: auto;
+    background: rgba(28, 24, 20, .88); color: #eee; border-radius: 12px; padding: 14px 16px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.25); font-size: 13px; backdrop-filter: blur(6px);
+  }
+  #panel h1 { font-size: 17px; margin: 0 0 2px; color: #f3c58f; }
+  #panel.hidden { display: none; }
+  #hidePanel { position: absolute; top: 10px; right: 10px; padding: 3px 8px; }
+  #showPanel { position: fixed; top: 12px; left: 12px; display: none; padding: 8px 12px; font-size: 13px;
+    background: rgba(28, 24, 20, .88); box-shadow: 0 4px 14px rgba(0,0,0,.2); }
+  .sub { color: #aaa; font-size: 12px; margin-bottom: 10px; }
+  .sl { margin: 8px 0; }
+  .sl label { display: flex; justify-content: space-between; }
+  .sl label b { color: #f3c58f; font-weight: 600; }
+  .sl input { width: 100%; accent-color: #d58a45; }
+  .toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; margin: 12px 0; }
+  .toggles label { cursor: pointer; }
+  .btnrow { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+  button {
+    background: #3a312a; color: #eee; border: 1px solid #5b4b3d; border-radius: 6px;
+    padding: 6px 10px; cursor: pointer; font-size: 12px;
+  }
+  button:hover { background: #4d4036; }
+  button.wide { width: 100%; margin-top: 6px; background: #8a5426; border-color: #a86a35; }
+  button.wide:hover { background: #a3642f; }
+  #info { background: rgba(255,255,255,.06); border-radius: 8px; padding: 8px 10px; margin: 10px 0; line-height: 1.5; }
+  #info b { color: #f3c58f; }
+  details { margin-top: 10px; color: #ccc; line-height: 1.45; }
+  details summary { cursor: pointer; color: #f3c58f; }
+  details ol, details ul { padding-left: 18px; margin: 6px 0; }
+  #hint {
+    position: fixed; bottom: 14px; right: 16px; color: #5a4c40; font-size: 12px;
+    background: rgba(255,255,255,.7); padding: 6px 10px; border-radius: 6px;
+  }
+  .dim {
+    font: 600 11px system-ui, sans-serif; color: #222; background: rgba(255,255,255,.88);
+    padding: 1px 6px; border-radius: 4px; border: 1px solid #c9b8a6; white-space: nowrap;
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="panel">
+  <button id="hidePanel" title="Hide panel (H)">✕</button>
+  <h1>Wooden Suit Hanger</h1>
+  <div class="sub">Sizes in cm — drag the sliders, the model updates live.</div>
+  <div id="sliders"></div>
+
+  <div class="toggles">
+    <label><input type="checkbox" id="tHook" checked> Hook</label>
+    <label><input type="checkbox" id="tFlock" checked> Flocked tips</label>
+    <label><input type="checkbox" id="tRod"> Closet rod</label>
+    <label><input type="checkbox" id="tDims" checked> Dimensions</label>
+    <label><input type="checkbox" id="tSpin"> Auto-rotate</label>
+    <label><input type="checkbox" id="tWire"> Wireframe</label>
+  </div>
+
+  <div class="btnrow">
+    <button data-view="persp">3/4</button>
+    <button data-view="front">Front</button>
+    <button data-view="top">Top</button>
+    <button data-view="side">Side</button>
+    <button id="reset">Reset sizes</button>
+  </div>
+
+  <div id="info"></div>
+
+  <div class="sl"><label>Template paper size
+    <select id="paper" style="background:#3a312a;color:#eee;border:1px solid #5b4b3d;border-radius:4px">
+      <option>A4</option><option>Letter</option><option>A3</option></select></label></div>
+  <button class="wide" id="tpl">🖨 Print bandsaw templates (half, 1:1)</button>
+  <button class="wide" id="svg">⬇ Template as one SVG (large format)</button>
+  <button class="wide" id="stl">⬇ STL of wooden body (mm)</button>
+
+  <details>
+    <summary>Shop notes</summary>
+    <ol>
+      <li><b>Stock:</b> beech, maple, cherry or walnut. Run the grain along the width.</li>
+      <li><b>Hook slot first:</b> while the blank is still square, cut the slot for the flat hook (see template) at the top center.</li>
+      <li><b>Front profile:</b> glue the template onto the face and cut it on the bandsaw. Tape the offcuts back on.</li>
+      <li><b>Top profile:</b> lay the template on the top edge and cut again. This compound cut gives the thin waist and the wide shoulders.</li>
+      <li><b>Shape:</b> round everything over with a spokeshave, rasp and card scraper, then sand to 220–320.</li>
+      <li><b>Finish:</b> stain if wanted, then shellac or lacquer. Mask the shoulder tips.</li>
+      <li><b>Tips:</b> use a flocking kit (adhesive plus fibers) on the shoulders, or wrap them in thin suede.</li>
+      <li><b>Hook:</b> a flat chrome hanger hook (about 11 × 3.5 mm strip), epoxied into the slot.</li>
+    </ol>
+  </details>
+</div>
+<button id="showPanel" title="Show panel (H)">☰ Settings</button>
+<div id="hint">Drag: rotate · Scroll: zoom · Right-drag: pan · H: hide panel</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { STLExporter } from 'three/addons/exporters/STLExporter.js';
+
+// ---------- parameters (cm) ----------
+const DEFAULTS = { W: 45, angle: 21, blockH: 6.5, armH: 3, blockT: 4.5, armT: 2.2, shoulderT: 5.5, flock: 7, plan: 180, sweep: 0 };
+const P = { ...DEFAULTS };
+const SPEC = [
+  ['W', 'Overall width', 35, 55, 0.5],
+  ['angle', 'Arm droop, front view (° below level)', 5, 35, 0.5],
+  ['plan', 'Angle between arm planes, top view (°)', 140, 180, 0.5],
+  ['blockH', 'Center block height', 4, 9, 0.1],
+  ['armH', 'Arm height', 2, 4.5, 0.1],
+  ['blockT', 'Center thickness', 3, 6, 0.1],
+  ['armT', 'Arm thickness (waist)', 1.4, 4, 0.1],
+  ['shoulderT', 'Shoulder width (flare)', 2.5, 7, 0.1],
+  ['flock', 'Flocked tip length', 0, 12, 0.5],
+  ['sweep', 'Extra forward curve at tips', 0, 4, 0.1],
+];
+const TIP = 3;
+const FLAT = 2;               // half-width of the flat top of the center block
+// Each arm's top edge drops at P.angle, measured from the corner of the block (x = FLAT) to the tip.
+const armDrop = () => Math.tan(P.angle * Math.PI / 180) * (P.W / 2 - FLAT);
+const between = () => 180 - 2 * P.angle;   // angle between the left and right arms (front view)
+// Top view: each arm swings forward by fwd() degrees, so the two arm planes meet at P.plan degrees.
+const fwd = () => (180 - P.plan) / 2;                // length of the rounded nose of each arm
+const HOOK = { w: 1.1, t: 0.36, embed: 3.2 };
+
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+
+// Cross-section of the arm at distance x from center (x >= 0).
+// pad grows the section uniformly (used for the flocked sleeve).
+function profile(x, pad = 0) {
+  const L = P.W / 2, c = FLAT;
+  const sp = v => 0.5 * Math.log1p(Math.exp(v / 0.5));       // soft corner where the flat top ends
+  const s = Math.max(0, sp(x - c) - sp(-c)) / (L - c);
+  const k = 6;
+  const yTop = -armDrop() * (0.3 * (1 - Math.exp(-k * s)) / (1 - Math.exp(-k)) + 0.7 * s);
+  const h = P.armH + (P.blockH - P.armH) * Math.exp(-((x / 2.2) ** 2));
+  const t = P.armT + (P.blockT - P.armT) * Math.exp(-((x / 4) ** 2))
+          + (P.shoulderT - P.armT) * smooth(L * 0.45, L - TIP, x);
+  const e = (x - (L - TIP)) / (TIP + pad);
+  const f = Math.max(0.03, e > 0 ? Math.sqrt(Math.max(0, 1 - e * e)) : 1);
+  // forward swing (top view): straight line at fwd() past the block, plus optional extra curve at the tips
+  const tf = Math.tan(fwd() * Math.PI / 180), xm = Math.min(x, L);
+  const zc = tf * (sp(xm - c) - sp(-c)) + P.sweep * (xm / L) ** 2;
+  const slope = tf / (1 + Math.exp(-(xm - c) / 0.5)) + 2 * P.sweep * xm / (L * L);
+  // sections are cut square to x, so widen them to keep the true thickness square to the arm
+  const sec = Math.sqrt(1 + slope * slope);
+  return { yc: yTop - h / 2, hh: (h / 2 + pad) * f, hd: (t / 2 + pad) * f * sec, zc };
+}
+
+// ---------- sweep a rounded-rectangle (superellipse) section along stations ----------
+function sweep(st, { R = 56, ex = 5, flip = false, capStart = false, capEnd = false } = {}) {
+  const pos = [], uv = [], idx = [], R1 = R + 1;
+  for (const s of st) {
+    for (let j = 0; j <= R; j++) {
+      const th = -Math.PI / 2 + (j / R) * Math.PI * 2;
+      const c = Math.cos(th), sn = Math.sin(th);
+      const Y = Math.sign(sn) * Math.abs(sn) ** (2 / ex);
+      const Z = Math.sign(c) * Math.abs(c) ** (2 / ex);
+      pos.push(
+        s.p.x + s.ny.x * Y * s.hh + s.nz.x * Z * s.hd,
+        s.p.y + s.ny.y * Y * s.hh + s.nz.y * Z * s.hd,
+        s.p.z + s.ny.z * Y * s.hh + s.nz.z * Z * s.hd);
+      uv.push(s.u, j / R);
+    }
+  }
+  for (let i = 0; i < st.length - 1; i++) for (let j = 0; j < R; j++) {
+    const a = i * R1 + j, b = (i + 1) * R1 + j, c = (i + 1) * R1 + j + 1, d = i * R1 + j + 1;
+    if (!flip) idx.push(a, b, d, b, c, d); else idx.push(a, d, b, b, d, c);
+  }
+  const cap = (i, start) => {
+    const s = st[i], ci = pos.length / 3;
+    pos.push(s.p.x, s.p.y, s.p.z); uv.push(s.u, 0.5);
+    for (let j = 0; j < R; j++) {
+      const a = i * R1 + j, b = a + 1;
+      if (start !== flip) idx.push(ci, a, b); else idx.push(ci, b, a);
+    }
+  };
+  if (capStart) cap(0, true);
+  if (capEnd) cap(st.length - 1, false);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
+const UP = new THREE.Vector3(0, 1, 0), FWD = new THREE.Vector3(0, 0, 1);
+function armGeometry(side, x0, x1, pad, N, caps) {
+  const st = [];
+  for (let i = 0; i <= N; i++) {
+    const x = x0 + (x1 - x0) * Math.sin((i / N) * Math.PI / 2);
+    const p = profile(x, pad);
+    st.push({ p: new THREE.Vector3(side * x, p.yc, p.zc), ny: UP, nz: FWD, hh: p.hh, hd: p.hd, u: x / 20 });
+  }
+  return sweep(st, { flip: side < 0, capStart: caps, capEnd: true });
+}
+
+// Flat-strip hook built turtle-style: up out of the block, small Z-jog, shaft, curl.
+function hookPath() {
+  const pts = []; let x = 0, y = -HOOK.embed, a = Math.PI / 2;
+  const push = () => pts.push(new THREE.Vector2(x, y));
+  const fwd = d => { const n = Math.max(1, Math.ceil(d / 0.3)); for (let i = 0; i < n; i++) { x += Math.cos(a) * d / n; y += Math.sin(a) * d / n; push(); } };
+  const arc = (r, ang) => {
+    const sg = Math.sign(ang), n = Math.max(4, Math.ceil(Math.abs(ang) * r / 0.12));
+    const cx = x + Math.cos(a + sg * Math.PI / 2) * r, cy = y + Math.sin(a + sg * Math.PI / 2) * r;
+    const phi = Math.atan2(y - cy, x - cx);
+    for (let i = 1; i <= n; i++) { const q = phi + ang * i / n; x = cx + Math.cos(q) * r; y = cy + Math.sin(q) * r; push(); }
+    a += ang; return { cx, cy, r };
+  };
+  push();
+  fwd(HOOK.embed + 0.8); arc(0.5, -Math.PI / 2); fwd(0.5); arc(0.5, Math.PI / 2); fwd(4.5);
+  const curl = arc(2.4, Math.PI * 1.15); fwd(0.8);
+  return { pts, curl };
+}
+function hookGeometry() {
+  const { pts, curl } = hookPath();
+  const st = pts.map((p, i) => {
+    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+    const t = new THREE.Vector2().subVectors(b, a).normalize();
+    return { p: new THREE.Vector3(p.x, p.y, 0), ny: new THREE.Vector3(-t.y, t.x, 0), nz: FWD, hh: HOOK.t / 2, hd: HOOK.w / 2, u: 0 };
+  });
+  return { geo: sweep(st, { R: 40, ex: 10, capStart: true, capEnd: true }), curl };
+}
+
+// ---------- textures & materials ----------
+function woodTexture() {
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 512;
+  const g = c.getContext('2d');
+  const grad = g.createLinearGradient(0, 0, 0, 512);
+  grad.addColorStop(0, '#8a4a1c'); grad.addColorStop(.5, '#9e5a26'); grad.addColorStop(1, '#84461a');
+  g.fillStyle = grad; g.fillRect(0, 0, 1024, 512);
+  for (let i = 0; i < 170; i++) {
+    const y0 = Math.random() * 512, amp = 1 + Math.random() * 7;
+    const k1 = 1 + Math.floor(Math.random() * 3), k2 = 3 + Math.floor(Math.random() * 6);
+    const ph1 = Math.random() * 6.28, ph2 = Math.random() * 6.28;
+    const dark = Math.random() < 0.7;
+    g.strokeStyle = dark ? `rgba(${70 + Math.random() * 40},${32 + Math.random() * 20},12,${0.06 + Math.random() * 0.22})`
+                         : `rgba(215,140,75,${0.05 + Math.random() * 0.15})`;
+    g.lineWidth = 0.5 + Math.random() * 3.5;
+    g.beginPath();
+    for (let x = 0; x <= 1024; x += 8) {
+      const yy = y0 + Math.sin(x / 1024 * 6.283 * k1 + ph1) * amp + Math.sin(x / 1024 * 6.283 * k2 + ph2) * amp * 0.25;
+      x === 0 ? g.moveTo(x, yy) : g.lineTo(x, yy);
+    }
+    g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+  return tex;
+}
+function noiseTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d'), d = g.createImageData(256, 256);
+  for (let i = 0; i < d.data.length; i += 4) { const v = 100 + Math.random() * 155; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; }
+  g.putImageData(d, 0, 0);
+  const tex = new THREE.CanvasTexture(c); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(8, 4);
+  return tex;
+}
+const MAT = {
+  wood: new THREE.MeshPhysicalMaterial({ map: woodTexture(), roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.3 }),
+  flock: new THREE.MeshPhysicalMaterial({ color: 0x3e1c12, roughness: 1, sheen: 1, sheenRoughness: 0.5, sheenColor: 0x8a5040, bumpMap: noiseTexture(), bumpScale: 0.4 }),
+  chrome: new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 1, roughness: 0.12 }),
+  rod: new THREE.MeshStandardMaterial({ color: 0xcfcfcf, metalness: 0.9, roughness: 0.3 }),
+};
+
+// ---------- scene ----------
+const app = document.getElementById('app');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.85;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+app.appendChild(renderer.domElement);
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(innerWidth, innerHeight);
+Object.assign(labelRenderer.domElement.style, { position: 'absolute', top: 0, left: 0, pointerEvents: 'none' });
+app.appendChild(labelRenderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xece8e2);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+
+const camera = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.5, 1000);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7a6a, 0.6));
+const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+sun.position.set(20, 40, 25); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -40, right: 40, top: 40, bottom: -40 });
+scene.add(sun);
+
+const FLOOR_Y = -20;
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.ShadowMaterial({ opacity: 0.18 }));
+floor.rotation.x = -Math.PI / 2; floor.position.y = FLOOR_Y; floor.receiveShadow = true;
+scene.add(floor);
+const grid = new THREE.GridHelper(100, 20, 0xb9ab9c, 0xd6cbbf); // 5 cm squares
+grid.position.y = FLOOR_Y + 0.01; scene.add(grid);
+
+const hanger = new THREE.Group(); scene.add(hanger);
+const body = new THREE.Group(); hanger.add(body);
+const flock = new THREE.Group(); hanger.add(flock);
+const hookMesh = new THREE.Mesh(new THREE.BufferGeometry(), MAT.chrome); hookMesh.castShadow = true; hanger.add(hookMesh);
+const rod = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 40, 48), MAT.rod);
+rod.rotation.x = Math.PI / 2; rod.castShadow = true; scene.add(rod);
+const dims = new THREE.Group(); scene.add(dims);
+
+function clearGroup(g) {
+  while (g.children.length) { const o = g.children.pop(); o.geometry?.dispose(); o.removeFromParent?.(); o.dispatchEvent({ type: 'removed' }); o.traverse?.(c => c.dispatchEvent({ type: 'removed' })); }
+}
+function mesh(geo, mat) { const m = new THREE.Mesh(geo, mat); m.castShadow = true; m.receiveShadow = true; return m; }
+
+// ---------- dimensions ----------
+const dimMat = new THREE.LineBasicMaterial({ color: 0x5a3d26 });
+function label(text, pos) { const d = document.createElement('div'); d.className = 'dim'; d.textContent = text; const o = new CSS2DObject(d); o.position.copy(pos); return o; }
+function dimLine(a, b, text, tick = new THREE.Vector3(0, 0.6, 0)) {
+  const pts = [a, b, a.clone().add(tick), a.clone().sub(tick), b.clone().add(tick), b.clone().sub(tick)];
+  const g = new THREE.BufferGeometry().setFromPoints([pts[0], pts[1], pts[2], pts[3], pts[4], pts[5]]);
+  dims.add(new THREE.LineSegments(g, dimMat));
+  dims.add(label(text, a.clone().add(b).multiplyScalar(0.5)));
+}
+
+const fmt = v => (Math.round(v * 10) / 10).toFixed(1);
+let stats = {};
+function computeStats() {
+  const L = P.W / 2; let yMin = 0, zMin = Infinity, zMax = -Infinity, tMax = 0, xMax = 0;
+  for (let i = 0; i <= 400; i++) {
+    const x = L * i / 400, p = profile(x);
+    yMin = Math.min(yMin, p.yc - p.hh); zMin = Math.min(zMin, p.zc - p.hd); zMax = Math.max(zMax, p.zc + p.hd);
+    if (2 * p.hd > tMax && x > L * 0.4) { tMax = 2 * p.hd; xMax = x; }
+  }
+  const pt = profile(L - TIP);
+  stats = { L, yMin, zMin, zMax, tMax, xMax, dropTop: pt.yc + pt.hh };
+}
+
+function buildDims() {
+  clearGroup(dims);
+  const { L, yMin, dropTop, xMax } = stats;
+  dimLine(new THREE.Vector3(-L, yMin - 2.5, 0), new THREE.Vector3(L, yMin - 2.5, 0), `${fmt(P.W)} cm wide`);
+  // arm angle: level reference + line along each arm's top edge, drawn just in front of the hanger
+  const D = armDrop(), za = stats.zMax + 0.4, th = P.angle * Math.PI / 180;
+  dimLine(new THREE.Vector3(L + 1.5, 0, za), new THREE.Vector3(L + 1.5, -D, za), `drop ${fmt(D)}`, new THREE.Vector3(0.6, 0, 0));
+  const dashed = new THREE.LineDashedMaterial({ color: 0x9a7a5a, dashSize: 0.5, gapSize: 0.4 });
+  const angMat = new THREE.LineBasicMaterial({ color: 0x7a2fb0 });
+  for (const sd of [1, -1]) {
+    const o = new THREE.Vector3(sd * FLAT, 0, za);
+    dims.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([o, new THREE.Vector3(sd * (L + 2.1), 0, za)]), dashed).computeLineDistances());
+    dims.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([o, new THREE.Vector3(sd * L, -D, za)]), angMat));
+    const arc = [], r = 7;
+    for (let i = 0; i <= 24; i++) { const a = th * i / 24; arc.push(new THREE.Vector3(sd * (FLAT + r * Math.cos(a)), -r * Math.sin(a), za)); }
+    dims.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(arc), angMat));
+    dims.add(label(`${fmt(P.angle)}°`, new THREE.Vector3(sd * (FLAT + (r + 2.2) * Math.cos(th / 2)), -(r + 2.2) * Math.sin(th / 2), za)));
+  }
+  dims.add(label(`${fmt(between())}° between arms (front)`, new THREE.Vector3(0, -P.blockH - 2.5, za)));
+  // top-view angle between the arm planes, drawn level just above the hanger (only when not flat)
+  if (P.plan >= 180) return;
+  const yp = 1.5, tf = Math.tan(fwd() * Math.PI / 180), pl = new THREE.LineBasicMaterial({ color: 0x1f7a6a });
+  for (const sd of [1, -1]) {
+    const o = new THREE.Vector3(0, yp, 0);
+    dims.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([o, new THREE.Vector3(sd * L, yp, 0)]), dashed).computeLineDistances());
+    dims.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([o, new THREE.Vector3(sd * L, yp, profile(L - TIP).zc + tf * TIP)]), pl));
+  }
+  const arcP = [], rp = 9, a0 = fwd() * Math.PI / 180;
+  for (let i = 0; i <= 40; i++) { const a = -a0 + (Math.PI + 2 * a0) * i / 40; arcP.push(new THREE.Vector3(rp * Math.cos(a), yp, rp * Math.sin(a))); }
+  dims.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(arcP), pl));
+  dims.add(label(`${fmt(P.plan)}° between arm planes (top)`, new THREE.Vector3(0, yp, rp + 1.5)));
+  const zf = P.blockT / 2 + 1.2;
+  dimLine(new THREE.Vector3(-2.5, 0, zf), new THREE.Vector3(-2.5, -P.blockH, zf), `block ${fmt(P.blockH)}`, new THREE.Vector3(0.6, 0, 0));
+  const ps = profile(xMax);
+  dimLine(new THREE.Vector3(xMax, ps.yc + ps.hh + 1.2, ps.zc - ps.hd), new THREE.Vector3(xMax, ps.yc + ps.hh + 1.2, ps.zc + ps.hd), `shoulder ${fmt(P.shoulderT)}`, new THREE.Vector3(0.6, 0, 0));
+  dimLine(new THREE.Vector3(-4.2, 1.2, -P.blockT / 2), new THREE.Vector3(-4.2, 1.2, P.blockT / 2), `${fmt(P.blockT)} thick`, new THREE.Vector3(0.6, 0, 0));
+}
+
+// ---------- build ----------
+function rebuild() {
+  computeStats();
+  const L = P.W / 2;
+  clearGroup(body); clearGroup(flock);
+  body.add(mesh(armGeometry(1, 0, L, 0, 220, false), MAT.wood));
+  body.add(mesh(armGeometry(-1, 0, L, 0, 220, false), MAT.wood));
+  if (P.flock > 0) {
+    const pad = 0.07, x0 = Math.max(0.5, L - P.flock);
+    flock.add(mesh(armGeometry(1, x0, L + pad, pad, 90, true), MAT.flock));
+    flock.add(mesh(armGeometry(-1, x0, L + pad, pad, 90, true), MAT.flock));
+  }
+  hookMesh.geometry.dispose();
+  const { geo, curl } = hookGeometry();
+  hookMesh.geometry = geo;
+  rod.position.set(curl.cx, curl.cy + curl.r - HOOK.t / 2 - 1.6, 0);
+  buildDims();
+  applyToggles();
+
+  const { yMin, zMin, zMax } = stats;
+  document.getElementById('info').innerHTML =
+    `<b>Rough blank</b> (before shaping):<br>` +
+    `${fmt(P.W)} × ${fmt(-yMin)} × ${fmt(zMax - zMin)} cm<br>` +
+    `<span style="color:#aaa">add ~1 cm all round for sawing</span><br>` +
+    `<b>Front view:</b> arms droop ${fmt(P.angle)}° → <b>${fmt(between())}°</b> between them (drop ${fmt(armDrop())} cm)<br>` +
+    `<b>Top view:</b> arms swing ${fmt(fwd())}° forward → <b>${fmt(P.plan)}°</b> between the arm planes<br>` +
+    `<b>Flat hook:</b> ${Math.round(HOOK.w * 10)} × ${Math.round(HOOK.t * 100) / 10} mm strip, slot ${Math.round(HOOK.embed * 10)} mm deep`;
+}
+
+function applyToggles() {
+  const on = id => document.getElementById(id).checked;
+  hookMesh.visible = on('tHook');
+  flock.visible = on('tFlock');
+  rod.visible = on('tRod');
+  dims.visible = on('tDims');
+  dims.children.forEach(o => { if (o.element) o.element.style.display = on('tDims') ? '' : 'none'; });
+  controls.autoRotate = on('tSpin');
+  Object.values(MAT).forEach(m => m.wireframe = on('tWire'));
+}
+
+// ---------- UI ----------
+const sl = document.getElementById('sliders');
+for (const [key, name, min, max, step] of SPEC) {
+  const div = document.createElement('div'); div.className = 'sl';
+  div.innerHTML = `<label>${name}<b id="v_${key}"></b></label><input type="range" id="s_${key}" min="${min}" max="${max}" step="${step}">`;
+  sl.appendChild(div);
+}
+function syncSliders() { for (const [k] of SPEC) { document.getElementById('s_' + k).value = P[k]; document.getElementById('v_' + k).textContent = fmt(P[k]); } }
+for (const [k] of SPEC) document.getElementById('s_' + k).addEventListener('input', e => {
+  P[k] = parseFloat(e.target.value); document.getElementById('v_' + k).textContent = fmt(P[k]); rebuild();
+});
+['tHook', 'tFlock', 'tRod', 'tDims', 'tSpin', 'tWire'].forEach(id => document.getElementById(id).addEventListener('change', applyToggles));
+document.getElementById('reset').onclick = () => { Object.assign(P, DEFAULTS); syncSliders(); rebuild(); };
+
+const TARGET = new THREE.Vector3(0, -3, 0);
+const VIEWS = { persp: [42, 24, 70], front: [0, -3, 95], top: [0, 90, 0.01], side: [80, -3, 0] };
+function setView(v) { camera.position.set(...VIEWS[v]); controls.target.copy(TARGET); controls.update(); }
+document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => setView(b.dataset.view));
+
+function download(name, data, type) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], { type })); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// ---------- bandsaw templates (half hanger, 1:1, units mm) ----------
+const PAPER = { A4: [297, 210], Letter: [279.4, 215.9], A3: [420, 297] };
+const PAGE_MARGIN = 10, HEAD = 12, FOOT = 16, OVERLAP = 15;
+
+// Builds one view as SVG content in mm. Returns { w, h, body }.
+function templateView(kind) {
+  computeStats();
+  const { L, yMin, zMin, zMax } = stats, sc = 10, pad = 14;
+  const xs = []; for (let i = 0; i <= 300; i++) xs.push(L * Math.sin((i / 300) * Math.PI / 2));
+  const pr = xs.map(x => ({ x, ...profile(x) }));
+  const f2 = v => v.toFixed(2);
+  const X = x => pad + x * sc;
+  const front = kind === 'front';
+  // vertical coordinate: front view uses height (y), top view uses depth (z, front edge at bottom)
+  const vMax = front ? 0 : zMax, vMin = front ? yMin : zMin;
+  const Y = v => pad + 6 + (front ? (vMax - v) : (v - vMin)) * sc;
+  const hi = p => front ? p.yc + p.hh : p.zc - p.hd;
+  const lo = p => front ? p.yc - p.hh : p.zc + p.hd;
+  const outline = 'M' + pr.map(p => `${f2(X(p.x))},${f2(Y(hi(p)))}`).join(' L') + ' L' +
+    pr.slice().reverse().map(p => `${f2(X(p.x))},${f2(Y(lo(p)))}`).join(' L') + ' Z';
+  const bx0 = X(0), bx1 = X(L) + 5, by0 = Y(front ? vMax : vMin), by1 = Y(front ? vMin : vMax);
+  const w = bx1 + pad, h = by1 + pad + 8;
+  const fx = X(L - P.flock);
+  const t = [];
+  // light alignment grid: a small cross every 10 mm, bigger every 50 mm (helps join tiled sheets)
+  for (let gx = 0; gx <= w; gx += 10) for (let gy = 0; gy <= h; gy += 10) {
+    const big = gx % 50 === 0 && gy % 50 === 0, r = big ? 2 : 0.8;
+    t.push(`<path d="M${gx - r},${gy}h${2 * r}M${gx},${gy - r}v${2 * r}" stroke="${big ? '#bbb' : '#ddd'}" stroke-width="0.2"/>`);
+  }
+  t.push(`<rect x="${bx0}" y="${f2(by0)}" width="${f2(bx1 - bx0)}" height="${f2(by1 - by0)}" fill="none" stroke="#888" stroke-width="0.3" stroke-dasharray="4 2"/>`);
+  t.push(`<text x="${f2(bx1 - 2)}" y="${f2(by0 - 1.5)}" font-size="2.6" fill="#888" text-anchor="end">blank edge ${fmt(L + 0.5)} × ${fmt((by1 - by0) / sc)} cm (half)</text>`);
+  t.push(`<path d="${outline}" fill="#f6ead9" stroke="#000" stroke-width="0.5"/>`);
+  t.push(`<text x="${f2(X(L * 0.42))}" y="${f2((Y(hi(pr[150])) + Y(lo(pr[150]))) / 2 + 1)}" font-size="3.4" fill="#8a5426" text-anchor="middle">GRAIN ⟶</text>`);
+  t.push(`<line x1="${bx0}" y1="${f2(by0 - 6)}" x2="${bx0}" y2="${f2(by1 + 6)}" stroke="#d00" stroke-width="0.4" stroke-dasharray="3 1.5"/>`);
+  t.push(`<text x="${bx0 + 1.5}" y="${f2(by1 + 6)}" font-size="2.8" fill="#d00">CENTERLINE – flip template here for the other half</text>`);
+  if (P.flock > 0) {
+    t.push(`<line x1="${f2(fx)}" y1="${f2(by0 - 3)}" x2="${f2(fx)}" y2="${f2(by1 + 3)}" stroke="#5a2" stroke-width="0.3" stroke-dasharray="1.5 1"/>`);
+    t.push(`<text x="${f2(fx + 1)}" y="${f2(by0 - 4)}" font-size="2.6" fill="#5a2">flocking starts (${fmt(P.flock)} cm from tip)</text>`);
+  }
+  const ht = HOOK.t * sc / 2, slot = `${Math.round(HOOK.t * 100) / 10}×${Math.round(HOOK.w * 10)} mm`;
+  if (front) {
+    t.push(`<rect x="${bx0}" y="${f2(Y(0))}" width="${ht}" height="${HOOK.embed * sc}" fill="#06c" opacity="0.35"/>`);
+    t.push(`<text x="${bx0 + 3}" y="${f2(Y(0) + HOOK.embed * sc + 4)}" font-size="2.6" fill="#06c">hook slot ${slot}, ${Math.round(HOOK.embed * 10)} mm deep</text>`);
+    // arm angle: level line + line along the top edge, with an arc, to set a bevel gauge from
+    const ox = X(FLAT), oy = Y(0), ex = X(L), ey = Y(-armDrop()), th = P.angle * Math.PI / 180, r = 45;
+    t.push(`<line x1="${f2(ox)}" y1="${f2(oy)}" x2="${f2(ex + 3)}" y2="${f2(oy)}" stroke="#7a2fb0" stroke-width="0.25" stroke-dasharray="2 1"/>`);
+    t.push(`<line x1="${f2(ox)}" y1="${f2(oy)}" x2="${f2(ex)}" y2="${f2(ey)}" stroke="#7a2fb0" stroke-width="0.3"/>`);
+    t.push(`<path d="M${f2(ox + r)},${f2(oy)} A${r},${r} 0 0 1 ${f2(ox + r * Math.cos(th))},${f2(oy + r * Math.sin(th))}" fill="none" stroke="#7a2fb0" stroke-width="0.3"/>`);
+    t.push(`<text x="${f2(ox + r + 2)}" y="${f2(oy + r * Math.sin(th / 2) + 1)}" font-size="3.2" fill="#7a2fb0" font-weight="bold">${fmt(P.angle)}° below level</text>`);
+    t.push(`<text x="${f2(ox + r + 2)}" y="${f2(oy + r * Math.sin(th / 2) + 5)}" font-size="2.6" fill="#7a2fb0">= ${fmt(between())}° between the two arms (set your bevel gauge here)</text>`);
+  } else {
+    t.push(`<rect x="${bx0}" y="${f2(Y(-HOOK.w / 2))}" width="${ht}" height="${HOOK.w * sc}" fill="#06c" opacity="0.5"/>`);
+    t.push(`<text x="${bx0 + 3}" y="${f2(Y(zMin) - 2)}" font-size="2.6" fill="#06c">hook slot ${slot}</text>`);
+    t.push(`<text x="${f2(X(L * 0.5))}" y="${f2(by1 + 5)}" font-size="2.8" fill="#555" text-anchor="middle">▼ FRONT of hanger (side facing out of the closet)</text>`);
+    // angle between the arm planes: centerline of the arm vs. a square reference line
+    if (P.plan < 180) {
+    const tf = Math.tan(fwd() * Math.PI / 180), ox = X(0), oy = Y(0), r = 45, th = fwd() * Math.PI / 180;
+    const ex = X(L - TIP), ey = Y(profile(L - TIP).zc);
+    t.push(`<line x1="${f2(ox)}" y1="${f2(oy)}" x2="${f2(X(L) + 3)}" y2="${f2(oy)}" stroke="#1f7a6a" stroke-width="0.25" stroke-dasharray="2 1"/>`);
+    t.push(`<line x1="${f2(ox)}" y1="${f2(oy)}" x2="${f2(ex)}" y2="${f2(ey)}" stroke="#1f7a6a" stroke-width="0.3"/>`);
+    if (th > 0.001) t.push(`<path d="M${f2(ox + r)},${f2(oy)} A${r},${r} 0 0 1 ${f2(ox + r * Math.cos(th))},${f2(oy + r * Math.sin(th))}" fill="none" stroke="#1f7a6a" stroke-width="0.3"/>`);
+    t.push(`<text x="${f2(ox + r + 2)}" y="${f2(oy - 1.5)}" font-size="3" fill="#1f7a6a" font-weight="bold">arm swings ${fmt(fwd())}° forward = ${fmt(P.plan)}° between the arm planes</text>`);
+    }
+  }
+  t.push(`<text x="${pad}" y="${pad - 4}" font-size="4.2" font-weight="bold">${front ? 'FRONT VIEW – cut 1st (template on the face of the board)' : 'TOP VIEW – cut 2nd (template on the top edge, offcuts taped back)'}</text>`);
+  return { w, h, body: t.join('\n') };
+}
+
+function scaleBar() {
+  const ticks = [];
+  for (let v = 0; v <= 100; v += 10) ticks.push(`<line x1="${v + 1}" y1="${v % 50 ? 3 : 1}" x2="${v + 1}" y2="5" stroke="#000" stroke-width="0.3"/>`);
+  return `<svg width="104mm" height="10mm" viewBox="0 0 104 10"><line x1="1" y1="5" x2="101" y2="5" stroke="#000" stroke-width="0.6"/>${ticks.join('')}<text x="1" y="9.5" font-size="3" font-family="Arial">100 mm – measure this to check the print scale</text></svg>`;
+}
+
+function printTemplates() {
+  const paper = document.getElementById('paper').value;
+  const [pw, ph] = PAPER[paper];
+  const tw = pw - 2 * PAGE_MARGIN, th = ph - 2 * PAGE_MARGIN - HEAD - FOOT;
+  const pages = [];
+  for (const kind of ['front', 'top']) {
+    const v = templateView(kind);
+    const cols = v.w <= tw ? 1 : Math.ceil((v.w - OVERLAP) / (tw - OVERLAP));
+    const rows = v.h <= th ? 1 : Math.ceil((v.h - OVERLAP) / (th - OVERLAP));
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const x0 = c * (tw - OVERLAP), y0 = r * (th - OVERLAP);
+      const tiled = cols * rows > 1;
+      const ov = [];
+      if (c < cols - 1) ov.push(`<rect x="${x0 + tw - OVERLAP}" y="${y0}" width="${OVERLAP}" height="${th}" fill="#06c" opacity="0.06"/><text x="${x0 + tw - OVERLAP / 2}" y="${y0 + th / 2}" font-size="3" fill="#06c" text-anchor="middle" transform="rotate(90 ${x0 + tw - OVERLAP / 2} ${y0 + th / 2})">overlap – lay next sheet over this strip, match the crosses</text>`);
+      if (r < rows - 1) ov.push(`<rect x="${x0}" y="${y0 + th - OVERLAP}" width="${tw}" height="${OVERLAP}" fill="#06c" opacity="0.06"/><text x="${x0 + tw / 2}" y="${y0 + th - OVERLAP / 2}" font-size="3" fill="#06c" text-anchor="middle">overlap – lay next sheet over this strip, match the crosses</text>`);
+      pages.push(`<div class="page">
+  <div class="head"><b>${kind === 'front' ? 'Front view' : 'Top view'}</b>${tiled ? ` – sheet ${r * cols + c + 1} of ${rows * cols} (row ${r + 1}, col ${c + 1})` : ''}
+    <span>Hanger ${fmt(P.W)} cm · droop ${fmt(P.angle)}° (${fmt(between())}° front view) · arm planes ${fmt(P.plan)}° (top view) · block ${fmt(P.blockH)}×${fmt(P.blockT)} · arm ${fmt(P.armH)}×${fmt(P.armT)} · shoulder ${fmt(P.shoulderT)} · curve ${fmt(P.sweep)} — HALF template, 1:1</span></div>
+  <svg width="${tw}mm" height="${th}mm" viewBox="${x0} ${y0} ${tw} ${th}" font-family="Arial, sans-serif">${v.body}${ov.join('')}</svg>
+  <div class="foot">${scaleBar()}</div>
+</div>`);
+    }
+  }
+  const steps = `<div class="page steps"><h2>Bandsaw templates – how to use</h2><ol>
+    <li>Print at <b>100% / Actual size</b> (turn off “Fit to page”). Measure the 100 mm bar at the bottom of each sheet.</li>
+    <li>If a view is split over several sheets, overlap them on the shaded strip, line up the small crosses, and tape them together.</li>
+    <li>Cut the templates out roughly and stick them on with spray adhesive or glue stick. The grey dashed box is the edge of the board: line it up with your blank.</li>
+    <li><b>Hook slot first</b> while the blank is still square (blue mark: ${Math.round(HOOK.t * 100) / 10}×${Math.round(HOOK.w * 10)} mm, ${Math.round(HOOK.embed * 10)} mm deep, on the centerline).</li>
+    <li><b>Front view:</b> stick it on the face of the board, cut one half, then <b>flip the template over on the red centerline</b> and mark the other half. Cut it.</li>
+    <li>Tape the offcuts back on so the blank is square again.</li>
+    <li><b>Top view:</b> stick it on the top edge, flip on the centerline the same way, and cut. Remove the tape and offcuts.</li>
+    <li>Shape and round over with spokeshave, rasp and sandpaper. The green line marks where the flocking starts.</li>
+  </ol><p>Rough blank: <b>${fmt(P.W)} × ${fmt(-stats.yMin)} × ${fmt(stats.zMax - stats.zMin)} cm</b> plus ~1 cm all round.</p>
+  <p>Paper: ${paper} landscape · ${pages.length} template sheet(s) follow.</p>
+  <button class="noprint" onclick="print()">🖨 Print</button></div>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Hanger templates ${fmt(P.W)} cm</title><style>
+  @page { size: ${pw}mm ${ph}mm; margin: ${PAGE_MARGIN}mm; }
+  body { margin: 0; font-family: Arial, sans-serif; background: #ddd; }
+  .page { width: ${tw}mm; height: ${ph - 2 * PAGE_MARGIN}mm; background: #fff; margin: 10mm auto; overflow: hidden; page-break-after: always; break-after: page; }
+  .head { height: ${HEAD}mm; font-size: 11pt; } .head span { display: block; font-size: 8pt; color: #555; margin-top: 1mm; }
+  .foot { height: ${FOOT}mm; display: flex; align-items: flex-end; }
+  svg { display: block; }
+  .steps { padding: 0; font-size: 11pt; line-height: 1.5; } .steps h2 { margin-top: 0; }
+  @media print { body { background: #fff; } .page { margin: 0; } .noprint { display: none; } }
+  </style></head><body>${steps}${pages.join('')}</body></html>`;
+  const win = window.open('', '_blank');
+  if (!win) { alert('Please allow pop-ups for this page to open the print templates.'); return; }
+  win.document.write(html); win.document.close();
+}
+document.getElementById('tpl').onclick = printTemplates;
+
+// Same two views on one big SVG sheet (for a plotter or large-format print).
+document.getElementById('svg').onclick = () => {
+  const f = templateView('front'), t = templateView('top'), gap = 10;
+  const W = Math.max(f.w, t.w), H = f.h + gap + t.h + 20;
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${W}mm" height="${H}mm" viewBox="0 0 ${W} ${H}" font-family="Arial, sans-serif">
+<rect width="100%" height="100%" fill="#fff"/>
+${f.body}
+<g transform="translate(0,${f.h + gap})">${t.body}</g>
+<g transform="translate(14,${H - 14})"><line x1="0" y1="0" x2="100" y2="0" stroke="#000" stroke-width="0.6"/><text x="0" y="5" font-size="3">100 mm – check scale</text></g>
+</svg>`;
+  download(`hanger-template-${P.W}cm.svg`, svg, 'image/svg+xml');
+};
+
+document.getElementById('stl').onclick = () => {
+  body.scale.setScalar(10); body.updateMatrixWorld(true);
+  const data = new STLExporter().parse(body, { binary: true });
+  body.scale.setScalar(1); body.updateMatrixWorld(true);
+  download(`hanger-body-${P.W}cm.stl`, data, 'model/stl');
+};
+
+function fitView() {
+  camera.aspect = innerWidth / innerHeight;
+  const panelShown = !document.getElementById('panel').classList.contains('hidden');
+  const off = panelShown && innerWidth > 700 ? 150 : 0; // half the panel width
+  camera.setViewOffset(innerWidth, innerHeight, -off, 0, innerWidth, innerHeight);
+  camera.updateProjectionMatrix();
+}
+fitView();
+function togglePanel(show) {
+  const panel = document.getElementById('panel');
+  if (show === undefined) show = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', !show);
+  document.getElementById('showPanel').style.display = show ? 'none' : 'block';
+  fitView();
+}
+document.getElementById('hidePanel').onclick = () => togglePanel(false);
+document.getElementById('showPanel').onclick = () => togglePanel(true);
+addEventListener('keydown', e => { if ((e.key === 'h' || e.key === 'H') && !/INPUT|SELECT/.test(e.target.tagName)) togglePanel(); });
+addEventListener('resize', () => {
+  fitView();
+  renderer.setSize(innerWidth, innerHeight); labelRenderer.setSize(innerWidth, innerHeight);
+});
+
+syncSliders();
+rebuild();
+setView('persp');
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); labelRenderer.render(scene, camera); });
+</script>
+</body>
+</html>
